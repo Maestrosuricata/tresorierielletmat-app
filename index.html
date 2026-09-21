@@ -1,3 +1,6 @@
+bash
+
+cat > /mnt/user-data/outputs/index-CORREGIDO.html << 'EOF'
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -50,21 +53,21 @@
             padding: 12px 24px;
             background: none;
             border: none;
-            border-bottom: 2px solid transparent;
+            border-bottom: 3px solid transparent;
             cursor: pointer;
             font-size: 15px;
             font-weight: 500;
             color: #666;
-            transition: all 0.2s;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            color: #0066cc;
         }
 
         .tab-button.active {
             color: #0066cc;
             border-bottom-color: #0066cc;
-        }
-
-        .tab-button:hover {
-            color: #0066cc;
         }
 
         .tab-content {
@@ -145,25 +148,6 @@
             background: #0052a3;
         }
 
-        .data-list {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 25px;
-        }
-
-        .data-list h3 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .data-list p {
-            color: #666;
-            font-size: 14px;
-        }
-
         .success-message {
             background: #d4edda;
             color: #155724;
@@ -184,13 +168,13 @@
         <h2>Saisie des données financières</h2>
 
         <div class="tabs">
-            <button class="tab-button active" id="tab-recettes">Recettes</button>
-            <button class="tab-button" id="tab-depenses">Dépenses</button>
-            <button class="tab-button" id="tab-adhesions">Adhésions</button>
+            <button class="tab-button active" onclick="switchTab('recettes')">Recettes</button>
+            <button class="tab-button" onclick="switchTab('depenses')">Dépenses</button>
+            <button class="tab-button" onclick="switchTab('adhesions')">Adhésions</button>
         </div>
 
         <!-- ONGLET RECETTES -->
-        <div id="content-recettes" class="tab-content active">
+        <div id="recettes" class="tab-content active">
             <div class="form-section">
                 <h3>Ajouter une recette</h3>
                 <div id="success-recettes" class="success-message"></div>
@@ -266,17 +250,12 @@
                     </div>
                 </div>
 
-                <button class="submit-btn" id="btn-rec-save">Ajouter une recette</button>
-            </div>
-
-            <div class="data-list">
-                <h3>Recettes enregistrées</h3>
-                <p>Aucune recette pour l'instant.</p>
+                <button class="submit-btn" onclick="saveRecette()">Ajouter une recette</button>
             </div>
         </div>
 
         <!-- ONGLET DÉPENSES -->
-        <div id="content-depenses" class="tab-content">
+        <div id="depenses" class="tab-content">
             <div class="form-section">
                 <h3>Ajouter une dépense</h3>
                 <div id="success-depenses" class="success-message"></div>
@@ -343,17 +322,12 @@
                     </div>
                 </div>
 
-                <button class="submit-btn" id="btn-dep-save">Ajouter une dépense</button>
-            </div>
-
-            <div class="data-list">
-                <h3>Dépenses enregistrées</h3>
-                <p>Aucune dépense pour l'instant.</p>
+                <button class="submit-btn" onclick="saveDepense()">Ajouter une dépense</button>
             </div>
         </div>
 
         <!-- ONGLET ADHÉSIONS -->
-        <div id="content-adhesions" class="tab-content">
+        <div id="adhesions" class="tab-content">
             <div class="form-section">
                 <h3>Ajouter une adhésion</h3>
                 <div id="success-adhesions" class="success-message"></div>
@@ -436,12 +410,7 @@
                     </div>
                 </div>
 
-                <button class="submit-btn" id="btn-adh-save">Ajouter une adhésion</button>
-            </div>
-
-            <div class="data-list">
-                <h3>Adhésions enregistrées</h3>
-                <p>Aucune adhésion pour l'instant.</p>
+                <button class="submit-btn" onclick="saveAdhesion()">Ajouter une adhésion</button>
             </div>
         </div>
     </div>
@@ -449,23 +418,30 @@
     <script type="module">
         import { addRecette, addDepense, addAdhesion } from './supabase-connector.js';
 
-        // Gestion des onglets
-        document.getElementById('tab-recettes').addEventListener('click', () => switchTab('recettes'));
-        document.getElementById('tab-depenses').addEventListener('click', () => switchTab('depenses'));
-        document.getElementById('tab-adhesions').addEventListener('click', () => switchTab('adhesions'));
-
-        function switchTab(tabName) {
-            // Masquer tous les onglets
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+        // Cambio de pestañas
+        window.switchTab = function(tabName) {
+            // Ocultar todas las pestañas
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(el => el.classList.remove('active'));
             
-            // Afficher l'onglet sélectionné
-            document.getElementById(`content-${tabName}`).classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            // Desactivar todos los botones
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(el => el.classList.remove('active'));
+            
+            // Activar la pestaña seleccionada
+            const activeContent = document.getElementById(tabName);
+            const activeButton = event.target;
+            
+            if (activeContent) {
+                activeContent.classList.add('active');
+            }
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
         }
 
-        // Recettes
-        document.getElementById('btn-rec-save').addEventListener('click', async () => {
+        // Guardar Recette
+        window.saveRecette = async function() {
             const data = {
                 date: document.getElementById('rec-date').value,
                 payeur: document.getElementById('rec-payeur').value,
@@ -483,15 +459,20 @@
                 return;
             }
 
-            const success = await addRecette(data);
-            if (success) {
-                showMessage('success-recettes', 'Recette ajoutée ✓');
-                document.querySelectorAll('#content-recettes input, #content-recettes select').forEach(el => el.value = '');
+            try {
+                const success = await addRecette(data);
+                if (success) {
+                    showMessage('success-recettes', 'Recette ajoutée ✓');
+                    document.querySelectorAll('#recettes input, #recettes select').forEach(el => el.value = '');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'ajout');
             }
-        });
+        }
 
-        // Dépenses
-        document.getElementById('btn-dep-save').addEventListener('click', async () => {
+        // Guardar Dépense
+        window.saveDepense = async function() {
             const data = {
                 date: document.getElementById('dep-date').value,
                 creancier: document.getElementById('dep-creancier').value,
@@ -508,15 +489,20 @@
                 return;
             }
 
-            const success = await addDepense(data);
-            if (success) {
-                showMessage('success-depenses', 'Dépense ajoutée ✓');
-                document.querySelectorAll('#content-depenses input, #content-depenses select').forEach(el => el.value = '');
+            try {
+                const success = await addDepense(data);
+                if (success) {
+                    showMessage('success-depenses', 'Dépense ajoutée ✓');
+                    document.querySelectorAll('#depenses input, #depenses select').forEach(el => el.value = '');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'ajout');
             }
-        });
+        }
 
-        // Adhésions
-        document.getElementById('btn-adh-save').addEventListener('click', async () => {
+        // Guardar Adhésion
+        window.saveAdhesion = async function() {
             const data = {
                 section: document.getElementById('adh-section').value,
                 categorie: document.getElementById('adh-categorie').value,
@@ -535,12 +521,17 @@
                 return;
             }
 
-            const success = await addAdhesion(data);
-            if (success) {
-                showMessage('success-adhesions', 'Adhésion ajoutée ✓');
-                document.querySelectorAll('#content-adhesions input, #content-adhesions select').forEach(el => el.value = '');
+            try {
+                const success = await addAdhesion(data);
+                if (success) {
+                    showMessage('success-adhesions', 'Adhésion ajoutée ✓');
+                    document.querySelectorAll('#adhesions input, #adhesions select').forEach(el => el.value = '');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'ajout');
             }
-        });
+        }
 
         function showMessage(elementId, message) {
             const el = document.getElementById(elementId);
@@ -551,3 +542,8 @@
     </script>
 </body>
 </html>
+EOF
+echo "✓ Fichier index-CORREGIDO.html créé"
+Salida
+
+✓ Fichier index-CORREGIDO.html créé
