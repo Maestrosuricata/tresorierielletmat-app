@@ -10,17 +10,19 @@
         .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; }
         h1 { font-size: 28px; margin-bottom: 8px; }
         h2 { font-size: 18px; margin-bottom: 20px; color: #666; }
+        
         .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 30px; }
-        .tab-btn { padding: 12px 24px; background: none; border: none; cursor: pointer; font-size: 15px; color: #666; }
+        .tab-btn { padding: 12px 24px; background: none; border: none; cursor: pointer; font-size: 15px; color: #666; border-bottom: 3px solid transparent; }
         .tab-btn.active { color: #0066cc; border-bottom: 3px solid #0066cc; }
-        .tab-content { display: none; }
+        
+        .tab-content { display: none; padding: 20px; background: #f9f9f9; border-radius: 8px; }
         .tab-content.active { display: block; }
-        .form-section { background: #f9f9f9; padding: 20px; border-radius: 8px; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .form-group { display: flex; flex-direction: column; }
         label { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        button { width: 100%; padding: 12px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; font-weight: 600; }
+        button { width: 100%; padding: 12px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 10px; }
         button:hover { background: #0052a3; }
     </style>
 </head>
@@ -30,63 +32,72 @@
         <h2>Saisie des données financières</h2>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('rec').classList.add('active'); this.classList.add('active');">Recettes</button>
-            <button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('dep').classList.add('active'); this.classList.add('active');">Dépenses</button>
-            <button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('adh').classList.add('active'); this.classList.add('active');">Adhésions</button>
+            <button class="tab-btn active" id="btn-rec" onclick="switchTab('rec')">Recettes</button>
+            <button class="tab-btn" id="btn-dep" onclick="switchTab('dep')">Dépenses</button>
+            <button class="tab-btn" id="btn-adh" onclick="switchTab('adh')">Adhésions</button>
         </div>
 
         <div id="rec" class="tab-content active">
-            <div class="form-section">
-                <h3>Ajouter une recette</h3>
-                <div class="form-grid">
-                    <div class="form-group"><label>Date</label><input type="date"></div>
-                    <div class="form-group"><label>Payeur</label><input type="text"></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Source</label><select><option>Adhésions</option><option>Tournois</option></select></div>
-                    <div class="form-group"><label>Destination</label><select><option>Buvette</option><option>Tournois</option></select></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Montant (€)</label><input type="number"></div>
-                    <div class="form-group"><label>Mode</label><select><option>Chèque</option><option>Espèces</option></select></div>
-                </div>
-                <button>✓ Ajouter recette</button>
+            <h3>Ajouter une recette</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Date</label><input type="date"></div>
+                <div class="form-group"><label>Payeur</label><input type="text"></div>
             </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Source</label><select><option>Adhésions</option><option>Tournois</option></select></div>
+                <div class="form-group"><label>Destination</label><select><option>Buvette</option><option>Tournois</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Montant</label><input type="number"></div>
+                <div class="form-group"><label>Mode</label><select><option>Chèque</option><option>Espèces</option></select></div>
+            </div>
+            <button>✓ Ajouter</button>
         </div>
 
         <div id="dep" class="tab-content">
-            <div class="form-section">
-                <h3>Ajouter une dépense</h3>
-                <div class="form-grid">
-                    <div class="form-group"><label>Date</label><input type="date"></div>
-                    <div class="form-group"><label>Créancier</label><input type="text"></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Catégorie</label><select><option>Buvette</option><option>Tournois</option></select></div>
-                    <div class="form-group"><label>Payeur</label><select><option>Mariano</option><option>Hervé</option></select></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Montant (€)</label><input type="number"></div>
-                    <div class="form-group"><label>Mode</label><select><option>Chèque</option><option>Espèces</option></select></div>
-                </div>
-                <button>✓ Ajouter dépense</button>
+            <h3>Ajouter une dépense</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Date</label><input type="date"></div>
+                <div class="form-group"><label>Créancier</label><input type="text"></div>
             </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Catégorie</label><select><option>Buvette</option><option>Tournois</option></select></div>
+                <div class="form-group"><label>Payeur</label><select><option>Mariano</option><option>Hervé</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Montant</label><input type="number"></div>
+                <div class="form-group"><label>Mode</label><select><option>Chèque</option><option>Espèces</option></select></div>
+            </div>
+            <button>✓ Ajouter</button>
         </div>
 
         <div id="adh" class="tab-content">
-            <div class="form-section">
-                <h3>Ajouter une adhésion</h3>
-                <div class="form-grid">
-                    <div class="form-group"><label>Section</label><select><option>Betton</option><option>Saint-Grégoire</option></select></div>
-                    <div class="form-group"><label>Catégorie</label><select><option>Adhésion</option><option>Famille</option></select></div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Montant (€)</label><input type="number"></div>
-                    <div class="form-group"><label>Date</label><input type="date"></div>
-                </div>
-                <button>✓ Ajouter adhésion</button>
+            <h3>Ajouter une adhésion</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Section</label><select><option>Betton</option><option>Saint-Grégoire</option></select></div>
+                <div class="form-group"><label>Catégorie</label><select><option>Adhésion</option><option>Famille</option></select></div>
             </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Montant</label><input type="number"></div>
+                <div class="form-group"><label>Date</label><input type="date"></div>
+            </div>
+            <button>✓ Ajouter</button>
         </div>
     </div>
+
+    <script>
+        function switchTab(tab) {
+            document.getElementById('rec').classList.remove('active');
+            document.getElementById('dep').classList.remove('active');
+            document.getElementById('adh').classList.remove('active');
+            
+            document.getElementById('btn-rec').classList.remove('active');
+            document.getElementById('btn-dep').classList.remove('active');
+            document.getElementById('btn-adh').classList.remove('active');
+            
+            document.getElementById(tab).classList.add('active');
+            document.getElementById('btn-' + tab).classList.add('active');
+        }
+    </script>
 </body>
 </html>
