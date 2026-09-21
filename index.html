@@ -21,8 +21,8 @@
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
         button { width: 100%; padding: 12px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 10px; }
         button:hover { background: #0052a3; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f0f0f0; font-weight: 600; }
         .load-btn { width: auto; display: inline-block; }
     </style>
@@ -46,12 +46,12 @@
                 <div class="form-group"><label>Payeur</label><input type="text" id="rec-payeur"></div>
             </div>
             <div class="form-grid">
-                <div class="form-group"><label>Source</label><select id="rec-source"><option>Adhésions</option><option>Tournois</option></select></div>
-                <div class="form-group"><label>Destination</label><select id="rec-destination"><option>Buvette</option><option>Tournois</option></select></div>
+                <div class="form-group"><label>Source</label><select id="rec-source"><option>Adhésions</option><option>Tournois</option><option>Apéro</option></select></div>
+                <div class="form-group"><label>Destination</label><select id="rec-destination"><option>Buvette</option><option>Tournois</option><option>Animation</option></select></div>
             </div>
             <div class="form-grid">
-                <div class="form-group"><label>Montant</label><input type="number" id="rec-montant"></div>
-                <div class="form-group"><label>Mode</label><select id="rec-mode"><option>Chèque</option><option>Espèces</option></select></div>
+                <div class="form-group"><label>Montant</label><input type="number" id="rec-montant" step="0.01"></div>
+                <div class="form-group"><label>Mode</label><select id="rec-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option></select></div>
             </div>
             <button onclick="saveRec()">✓ Ajouter</button>
         </div>
@@ -59,16 +59,16 @@
         <div id="tab-dep" class="tab-content">
             <h3>Ajouter une dépense</h3>
             <div class="form-grid">
-                <div class="form-group"><label>Section</label><select id="dep-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
-                <div class="form-group"><label>Catégorie</label><select id="dep-categorie"><option>Buvette</option><option>Tournois</option></select></div>
-            </div>
-            <div class="form-grid">
                 <div class="form-group"><label>Date</label><input type="date" id="dep-date"></div>
                 <div class="form-group"><label>Créancier</label><input type="text" id="dep-creancier"></div>
             </div>
             <div class="form-grid">
-                <div class="form-group"><label>Montant</label><input type="number" id="dep-montant"></div>
-                <div class="form-group"><label>Mode</label><select id="dep-mode"><option>Chèque</option><option>Espèces</option></select></div>
+                <div class="form-group"><label>Catégorie</label><select id="dep-categorie"><option>Buvette</option><option>Tournois</option><option>Matériel</option><option>Animation</option></select></div>
+                <div class="form-group"><label>Payeur</label><select id="dep-payeur"><option>Mariano</option><option>Hervé</option><option>Autre</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Montant</label><input type="number" id="dep-montant" step="0.01"></div>
+                <div class="form-group"><label>Mode</label><select id="dep-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option></select></div>
             </div>
             <button onclick="saveDep()">✓ Ajouter</button>
         </div>
@@ -76,4 +76,73 @@
         <div id="tab-adh" class="tab-content">
             <h3>Ajouter une adhésion</h3>
             <div class="form-grid">
-                <div class="form-group"><label>Section</label><select id="adh-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermo
+                <div class="form-group"><label>Date</label><input type="date" id="adh-date"></div>
+                <div class="form-group"><label>Section</label><select id="adh-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Catégorie</label><select id="adh-categorie"><option>Adhésion individuelle</option><option>Famille</option><option>Loisir</option></select></div>
+                <div class="form-group"><label>Licence</label><select id="adh-licence"><option>A</option><option>B</option><option>Autre</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Montant</label><input type="number" id="adh-montant" step="0.01"></div>
+                <div class="form-group"><label>Mode</label><select id="adh-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option></select></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>Banque (si chèque)</label><input type="text" id="adh-banque"></div>
+                <div class="form-group"><label>Numéro chèque</label><input type="text" id="adh-numcheque"></div>
+            </div>
+            <button onclick="saveAdh()">✓ Ajouter</button>
+        </div>
+
+        <div id="tab-cons" class="tab-content">
+            <h3>Consolidado</h3>
+            <h4>Recettes</h4>
+            <button class="load-btn" onclick="loadRecettes()">📊 Cargar</button>
+            <div id="table-rec"></div>
+            <h4 style="margin-top: 30px;">Dépenses</h4>
+            <button class="load-btn" onclick="loadDepenses()">📊 Cargar</button>
+            <div id="table-dep"></div>
+            <h4 style="margin-top: 30px;">Adhésions</h4>
+            <button class="load-btn" onclick="loadAdhesions()">📊 Cargar</button>
+            <div id="table-adh"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        const SUPABASE_URL = 'https://vifwgxukckjmnvpvsaab.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_olO4qtgdXaV9XPXECIkcTA_cngX3bN0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function saveRec() {
+            const data = { date: document.getElementById('rec-date').value, payeur: document.getElementById('rec-payeur').value, source: document.getElementById('rec-source').value, destination: document.getElementById('rec-destination').value, montant: parseFloat(document.getElementById('rec-montant').value), mode: document.getElementById('rec-mode').value, statut: 'À encaisser', saison: '2026-2027' };
+            if (!data.date || !data.payeur || !data.montant) { alert('Remplis tous les champs'); return; }
+            try { await supabase.from('recettes').insert([data]); alert('✓ Recette ajoutée'); document.getElementById('rec-date').value = ''; document.getElementById('rec-payeur').value = ''; document.getElementById('rec-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
+        }
+
+        async function saveDep() {
+            const data = { date: document.getElementById('dep-date').value, creancier: document.getElementById('dep-creancier').value, categorie: document.getElementById('dep-categorie').value, montant: parseFloat(document.getElementById('dep-montant').value), mode: document.getElementById('dep-mode').value, payeur: document.getElementById('dep-payeur').value, statut: 'Payé', saison: '2026-2027' };
+            if (!data.date || !data.creancier || !data.montant) { alert('Remplis tous les champs'); return; }
+            try { await supabase.from('depenses').insert([data]); alert('✓ Dépense ajoutée'); document.getElementById('dep-date').value = ''; document.getElementById('dep-creancier').value = ''; document.getElementById('dep-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
+        }
+
+        async function saveAdh() {
+            const data = { date: document.getElementById('adh-date').value, section: document.getElementById('adh-section').value, categorie: document.getElementById('adh-categorie').value, licence: document.getElementById('adh-licence').value, montant: parseFloat(document.getElementById('adh-montant').value), mode: document.getElementById('adh-mode').value, ch_banque: document.getElementById('adh-banque').value, ch_num: document.getElementById('adh-numcheque').value, statut: 'À encaisser', saison: '2026-2027' };
+            if (!data.date || !data.section || !data.montant) { alert('Remplis tous les champs'); return; }
+            try { await supabase.from('adhesions').insert([data]); alert('✓ Adhésion ajoutée'); document.getElementById('adh-date').value = ''; document.getElementById('adh-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
+        }
+
+        async function loadRecettes() {
+            try { const { data, error } = await supabase.from('recettes').select('*').order('date', { ascending: false }); if (error) throw error; let html = '<table><tr><th>Date</th><th>Payeur</th><th>Source</th><th>Destination</th><th>Montant</th><th>Mode</th></tr>'; data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.payeur}</td><td>${row.source}</td><td>${row.destination}</td><td>€${row.montant}</td><td>${row.mode}</td></tr>`; }); html += '</table>'; document.getElementById('table-rec').innerHTML = html; } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        async function loadDepenses() {
+            try { const { data, error } = await supabase.from('depenses').select('*').order('date', { ascending: false }); if (error) throw error; let html = '<table><tr><th>Date</th><th>Créancier</th><th>Catégorie</th><th>Payeur</th><th>Montant</th><th>Mode</th></tr>'; data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.creancier}</td><td>${row.categorie}</td><td>${row.payeur}</td><td>€${row.montant}</td><td>${row.mode}</td></tr>`; }); html += '</table>'; document.getElementById('table-dep').innerHTML = html; } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        async function loadAdhesions() {
+            try { const { data, error } = await supabase.from('adhesions').select('*').order('date', { ascending: false }); if (error) throw error; let html = '<table><tr><th>Date</th><th>Section</th><th>Catégorie</th><th>Licence</th><th>Montant</th><th>Mode</th><th>Statut</th></tr>'; data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.section}</td><td>${row.categorie}</td><td>${row.licence}</td><td>€${row.montant}</td><td>${row.mode}</td><td>${row.statut}</td></tr>`; }); html += '</table>'; document.getElementById('table-adh').innerHTML = html; } catch (e) { alert('Error: ' + e.message); }
+        }
+    </script>
+</body>
+</html>
