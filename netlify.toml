@@ -1,0 +1,9 @@
+# Configuration Netlify pour Tresorierielletmat
+[build]
+  publish = "."
+  command = "echo 'Build complete'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
