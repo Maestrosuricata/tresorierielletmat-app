@@ -10,28 +10,21 @@
         .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; }
         h1 { font-size: 28px; margin-bottom: 8px; }
         h2 { font-size: 18px; margin-bottom: 20px; color: #666; }
-        
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 30px; overflow-x: auto; }
-        .tab-btn { padding: 12px 24px; background: none; border: none; cursor: pointer; font-size: 15px; color: #666; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 30px; }
+        .tab-btn { padding: 12px 24px; background: none; border: none; cursor: pointer; font-size: 15px; color: #666; border-bottom: 3px solid transparent; }
         .tab-btn.active { color: #0066cc; border-bottom: 3px solid #0066cc; }
-        
         .tab-content { display: none; padding: 20px; background: #f9f9f9; border-radius: 8px; }
         .tab-content.active { display: block; }
-        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .form-group { display: flex; flex-direction: column; }
         label { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
         button { width: 100%; padding: 12px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 10px; }
         button:hover { background: #0052a3; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f0f0f0; font-weight: 600; }
-        tr:hover { background: #f9f9f9; }
-        
-        .load-btn { width: auto; display: inline-block; margin-right: 10px; margin-bottom: 15px; }
-        .loading { color: #0066cc; font-weight: 600; }
+        .load-btn { width: auto; display: inline-block; }
     </style>
 </head>
 <body>
@@ -40,14 +33,13 @@
         <h2>Saisie des données financières</h2>
 
         <div class="tabs">
-            <button class="tab-btn active" id="btn-rec" onclick="switchTab('rec')">Recettes</button>
-            <button class="tab-btn" id="btn-dep" onclick="switchTab('dep')">Dépenses</button>
-            <button class="tab-btn" id="btn-adh" onclick="switchTab('adh')">Adhésions</button>
-            <button class="tab-btn" id="btn-cons" onclick="switchTab('cons')">Consulta</button>
+            <button class="tab-btn active" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('tab-rec').classList.add('active'); this.classList.add('active');">Recettes</button>
+            <button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('tab-dep').classList.add('active'); this.classList.add('active');">Dépenses</button>
+            <button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('tab-adh').classList.add('active'); this.classList.add('active');">Adhésions</button>
+            <button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active')); document.getElementById('tab-cons').classList.add('active'); this.classList.add('active');">Consulta</button>
         </div>
 
-        <!-- RECETTES -->
-        <div id="rec" class="tab-content active">
+        <div id="tab-rec" class="tab-content active">
             <h3>Ajouter une recette</h3>
             <div class="form-grid">
                 <div class="form-group"><label>Date</label><input type="date" id="rec-date"></div>
@@ -64,8 +56,7 @@
             <button onclick="saveRec()">✓ Ajouter</button>
         </div>
 
-        <!-- DÉPENSES -->
-        <div id="dep" class="tab-content">
+        <div id="tab-dep" class="tab-content">
             <h3>Ajouter une dépense</h3>
             <div class="form-grid">
                 <div class="form-group"><label>Section</label><select id="dep-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
@@ -82,110 +73,7 @@
             <button onclick="saveDep()">✓ Ajouter</button>
         </div>
 
-        <!-- ADHÉSIONS -->
-        <div id="adh" class="tab-content">
+        <div id="tab-adh" class="tab-content">
             <h3>Ajouter une adhésion</h3>
             <div class="form-grid">
-                <div class="form-group"><label>Section</label><select id="adh-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
-                <div class="form-group"><label>Catégorie</label><select id="adh-categorie"><option>Adhésion</option><option>Famille</option></select></div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group"><label>Montant</label><input type="number" id="adh-montant"></div>
-                <div class="form-group"><label>Date</label><input type="date" id="adh-date"></div>
-            </div>
-            <button onclick="saveAdh()">✓ Ajouter</button>
-        </div>
-
-        <!-- CONSULTA -->
-        <div id="cons" class="tab-content">
-            <h3>Consolidado de datos</h3>
-            
-            <h4 style="margin-top: 20px;">Recettes</h4>
-            <button class="load-btn" onclick="loadRecettes()">📊 Cargar Recettes</button>
-            <div id="table-rec"></div>
-            
-            <h4 style="margin-top: 30px;">Dépenses</h4>
-            <button class="load-btn" onclick="loadDepenses()">📊 Cargar Dépenses</button>
-            <div id="table-dep"></div>
-            
-            <h4 style="margin-top: 30px;">Adhésions</h4>
-            <button class="load-btn" onclick="loadAdhesions()">📊 Cargar Adhésions</button>
-            <div id="table-adh"></div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script>
-        const SUPABASE_URL = 'https://vifwgxukckjmnvpvsaab.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_olO4qtgdXaV9XPXECIkcTA_cngX3bN0';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        function switchTab(tab) {
-            document.getElementById('rec').classList.remove('active');
-            document.getElementById('dep').classList.remove('active');
-            document.getElementById('adh').classList.remove('active');
-            document.getElementById('cons').classList.remove('active');
-            document.getElementById('btn-rec').classList.remove('active');
-            document.getElementById('btn-dep').classList.remove('active');
-            document.getElementById('btn-adh').classList.remove('active');
-            document.getElementById('btn-cons').classList.remove('active');
-            document.getElementById(tab).classList.add('active');
-            document.getElementById('btn-' + tab).classList.add('active');
-        }
-
-        async function saveRec() {
-            const data = { date: document.getElementById('rec-date').value, payeur: document.getElementById('rec-payeur').value, source: document.getElementById('rec-source').value, destination: document.getElementById('rec-destination').value, montant: document.getElementById('rec-montant').value, mode: document.getElementById('rec-mode').value, statut: 'À encaisser', saison: '2026-2027' };
-            if (!data.date || !data.payeur || !data.montant) { alert('Remplis tous les champs'); return; }
-            try { await supabase.from('recettes').insert([data]); alert('✓ Recette ajoutée'); document.getElementById('rec-date').value = ''; document.getElementById('rec-payeur').value = ''; document.getElementById('rec-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
-        }
-
-        async function saveDep() {
-            const data = { date: document.getElementById('dep-date').value, creancier: document.getElementById('dep-creancier').value, categorie: document.getElementById('dep-categorie').value, montant: document.getElementById('dep-montant').value, mode: document.getElementById('dep-mode').value, statut: 'Payé', saison: '2026-2027', payeur: 'Mariano' };
-            if (!data.date || !data.creancier || !data.montant) { alert('Remplis tous les champs'); return; }
-            try { await supabase.from('depenses').insert([data]); alert('✓ Dépense ajoutée'); document.getElementById('dep-date').value = ''; document.getElementById('dep-creancier').value = ''; document.getElementById('dep-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
-        }
-
-        async function saveAdh() {
-            const data = { date: document.getElementById('adh-date').value, section: document.getElementById('adh-section').value, categorie: document.getElementById('adh-categorie').value, montant: document.getElementById('adh-montant').value, statut: 'À encaisser', saison: '2026-2027' };
-            if (!data.date || !data.section || !data.montant) { alert('Remplis tous les champs'); return; }
-            try { await supabase.from('adhesions').insert([data]); alert('✓ Adhésion ajoutée'); document.getElementById('adh-date').value = ''; document.getElementById('adh-montant').value = ''; } catch (e) { alert('Erreur: ' + e.message); }
-        }
-
-        async function loadRecettes() {
-            try {
-                const { data, error } = await supabase.from('recettes').select('*').order('date', { ascending: false });
-                if (error) throw error;
-                let html = '<table><tr><th>Date</th><th>Payeur</th><th>Source</th><th>Montant</th><th>Mode</th></tr>';
-                if (data.length === 0) html += '<tr><td colspan="5">Sin datos</td></tr>';
-                data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.payeur}</td><td>${row.source}</td><td>€${row.montant}</td><td>${row.mode}</td></tr>`; });
-                html += '</table>';
-                document.getElementById('table-rec').innerHTML = html;
-            } catch (e) { alert('Error: ' + e.message); }
-        }
-
-        async function loadDepenses() {
-            try {
-                const { data, error } = await supabase.from('depenses').select('*').order('date', { ascending: false });
-                if (error) throw error;
-                let html = '<table><tr><th>Date</th><th>Créancier</th><th>Catégorie</th><th>Montant</th><th>Mode</th></tr>';
-                if (data.length === 0) html += '<tr><td colspan="5">Sin datos</td></tr>';
-                data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.creancier}</td><td>${row.categorie}</td><td>€${row.montant}</td><td>${row.mode}</td></tr>`; });
-                html += '</table>';
-                document.getElementById('table-dep').innerHTML = html;
-            } catch (e) { alert('Error: ' + e.message); }
-        }
-
-        async function loadAdhesions() {
-            try {
-                const { data, error } = await supabase.from('adhesions').select('*').order('date', { ascending: false });
-                if (error) throw error;
-                let html = '<table><tr><th>Date</th><th>Section</th><th>Catégorie</th><th>Montant</th><th>Statut</th></tr>';
-                if (data.length === 0) html += '<tr><td colspan="5">Sin datos</td></tr>';
-                data.forEach(row => { html += `<tr><td>${row.date}</td><td>${row.section}</td><td>${row.categorie}</td><td>€${row.montant}</td><td>${row.statut}</td></tr>`; });
-                html += '</table>';
-                document.getElementById('table-adh').innerHTML = html;
-            } catch (e) { alert('Error: ' + e.message); }
-        }
-    </script>
-</body>
-</html>
+                <div class="form-group"><label>Section</label><select id="adh-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermo
