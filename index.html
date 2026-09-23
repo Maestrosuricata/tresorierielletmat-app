@@ -1,18 +1,298 @@
-ALTER TABLE recettes ADD COLUMN IF NOT EXISTS section TEXT;
-ALTER TABLE depenses ADD COLUMN IF NOT EXISTS section TEXT;
-ALTER TABLE adhesions ADD COLUMN IF NOT EXISTS adherent TEXT;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tresorierielletmat</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f2f4f7; padding: 16px; color: #222; }
+  .container { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; }
+  h1 { font-size: 26px; }
+  .sub { color: #666; margin: 4px 0 14px; }
+  .status { padding: 10px 14px; border-radius: 6px; margin-bottom: 18px; font-weight: bold; font-size: 14px; }
+  .status.wait { background: #eef2f7; color: #555; }
+  .status.ok { background: #d4edda; color: #155724; }
+  .status.err { background: #f8d7da; color: #721c24; }
+  .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; overflow-x: auto; }
+  .tab-btn { flex: 1; padding: 12px 16px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; color: #666; white-space: nowrap; }
+  .tab-btn.active { color: #0066cc; border-bottom-color: #0066cc; font-weight: bold; }
+  .tab-content { display: none; background: #f9fafb; padding: 20px; border-radius: 8px; }
+  .tab-content.active { display: block; }
+  h3 { margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field { display: flex; flex-direction: column; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 13px; font-weight: bold; margin-bottom: 5px; }
+  input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
+  .check { flex-direction: row; align-items: center; gap: 8px; margin-top: 22px; }
+  .check input { width: 18px; height: 18px; }
+  .btn { width: 100%; padding: 12px; background: #0066cc; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .btn:hover { background: #0052a3; }
+  .btn.small { width: auto; padding: 8px 16px; font-size: 14px; margin-bottom: 14px; }
+  .msg { margin-top: 12px; padding: 10px; border-radius: 6px; display: none; font-weight: bold; }
+  .msg.ok { display: block; background: #d4edda; color: #155724; }
+  .msg.err { display: block; background: #f8d7da; color: #721c24; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .t { font-size: 12px; color: #666; }
+  .card .v { font-size: 20px; font-weight: bold; margin-top: 4px; }
+  .pos { color: #155724; } .neg { color: #b00020; }
+  h4 { margin: 22px 0 8px; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e3e3e3; white-space: nowrap; }
+  th { background: #eef1f5; }
+  .empty { color: #888; font-style: italic; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Tresorierielletmat</h1>
+  <p class="sub">Ille et Mat — saisie et suivi financier, saison 2026-2027</p>
+  <div id="status" class="status wait">Connexion à Supabase en cours…</div>
 
-DO $$
-DECLARE t text;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['recettes','depenses','adhesions'] LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('DROP POLICY IF EXISTS "app_select_%s" ON %I', t, t);
-    EXECUTE format('DROP POLICY IF EXISTS "app_insert_%s" ON %I', t, t);
-    EXECUTE format('CREATE POLICY "app_select_%s" ON %I FOR SELECT TO anon, authenticated USING (true)', t, t);
-    EXECUTE format('CREATE POLICY "app_insert_%s" ON %I FOR INSERT TO anon, authenticated WITH CHECK (true)', t, t);
-    EXECUTE format('GRANT SELECT, INSERT ON %I TO anon, authenticated', t);
-  END LOOP;
-END $$;
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="rec" onclick="showTab('rec')">Recettes</button>
+    <button class="tab-btn" data-tab="dep" onclick="showTab('dep')">Dépenses</button>
+    <button class="tab-btn" data-tab="adh" onclick="showTab('adh')">Adhésions</button>
+    <button class="tab-btn" data-tab="cons" onclick="showTab('cons')">Consultation</button>
+  </div>
 
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+  <!-- RECETTES -->
+  <div id="tab-rec" class="tab-content active">
+    <h3>Ajouter une recette</h3>
+    <form id="f-rec" onsubmit="saveRec(); return false;">
+      <div class="grid">
+        <div class="field"><label>Date *</label><input type="date" id="rec-date"></div>
+        <div class="field"><label>Section</label><select id="rec-section"><option>Club (général)</option><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
+        <div class="field"><label>Payeur *</label><input type="text" id="rec-payeur"></div>
+        <div class="field"><label>Montant (€) *</label><input type="number" id="rec-montant" step="0.01" min="0" inputmode="decimal"></div>
+        <div class="field"><label>Source</label><select id="rec-source"><option>Tournois</option><option>Apéro</option><option>Pot</option><option>Matériel</option><option>Cahier</option><option>Subvention</option><option>Autre</option></select></div>
+        <div class="field"><label>Destination</label><select id="rec-destination"><option>Buvette</option><option>Tournois</option><option>Animation</option><option>Autre</option></select></div>
+        <div class="field"><label>Mode</label><select id="rec-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option></select></div>
+        <div class="field"><label>Statut</label><select id="rec-statut"><option>À encaisser</option><option>Encaissé</option></select></div>
+        <div class="field"><label>Banque (si chèque)</label><input type="text" id="rec-banque"></div>
+        <div class="field"><label>N° de chèque</label><input type="text" id="rec-num"></div>
+        <div class="field full"><label>Notes</label><input type="text" id="rec-notes"></div>
+      </div>
+      <button type="submit" class="btn">Ajouter la recette</button>
+    </form>
+    <div id="msg-rec" class="msg"></div>
+  </div>
+
+  <!-- DÉPENSES -->
+  <div id="tab-dep" class="tab-content">
+    <h3>Ajouter une dépense</h3>
+    <form id="f-dep" onsubmit="saveDep(); return false;">
+      <div class="grid">
+        <div class="field"><label>Date *</label><input type="date" id="dep-date"></div>
+        <div class="field"><label>Section</label><select id="dep-section"><option>Club (général)</option><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
+        <div class="field"><label>Créancier *</label><input type="text" id="dep-creancier"></div>
+        <div class="field"><label>Montant (€) *</label><input type="number" id="dep-montant" step="0.01" min="0" inputmode="decimal"></div>
+        <div class="field"><label>Catégorie</label><select id="dep-categorie"><option>Buvette</option><option>Tournois</option><option>Matériel</option><option>Animation</option><option>Licences / FFE</option><option>Frais de fonctionnement</option><option>Autre</option></select></div>
+        <div class="field"><label>Payé par</label><select id="dep-payeur"><option>Club</option><option>Mariano</option><option>Hervé</option><option>Autre</option></select></div>
+        <div class="field"><label>Mode</label><select id="dep-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option><option>Carte</option></select></div>
+        <div class="field"><label>Statut</label><select id="dep-statut"><option>Payé</option><option>À payer</option><option>À rembourser</option></select></div>
+        <div class="field"><label>N° de pièce / facture</label><input type="text" id="dep-piece"></div>
+        <div class="field"><label>Notes</label><input type="text" id="dep-notes"></div>
+      </div>
+      <button type="submit" class="btn">Ajouter la dépense</button>
+    </form>
+    <div id="msg-dep" class="msg"></div>
+  </div>
+
+  <!-- ADHÉSIONS -->
+  <div id="tab-adh" class="tab-content">
+    <h3>Ajouter une adhésion</h3>
+    <form id="f-adh" onsubmit="saveAdh(); return false;">
+      <div class="grid">
+        <div class="field full"><label>Nom de l'adhérent *</label><input type="text" id="adh-nom" placeholder="Prénom NOM"></div>
+        <div class="field"><label>Date *</label><input type="date" id="adh-date"></div>
+        <div class="field"><label>Section *</label><select id="adh-section"><option>Betton</option><option>Saint-Grégoire</option><option>Montgermont</option></select></div>
+        <div class="field"><label>Catégorie</label><select id="adh-categorie"><option>Adhésion individuelle</option><option>Famille</option><option>Loisir</option><option>Jeune</option></select></div>
+        <div class="field"><label>Licence</label><select id="adh-licence"><option>A</option><option>B</option><option>Autre</option></select></div>
+        <div class="field"><label>Montant (€) *</label><input type="number" id="adh-montant" step="0.01" min="0" inputmode="decimal"></div>
+        <div class="field"><label>Mode</label><select id="adh-mode"><option>Chèque</option><option>Espèces</option><option>Virement</option></select></div>
+        <div class="field"><label>Statut</label><select id="adh-statut"><option>À encaisser</option><option>Encaissé</option></select></div>
+        <div class="field check"><input type="checkbox" id="adh-maman"><label for="adh-maman">Maman de joueur</label></div>
+        <div class="field"><label>Banque (si chèque)</label><input type="text" id="adh-banque"></div>
+        <div class="field"><label>N° de chèque</label><input type="text" id="adh-num"></div>
+        <div class="field full"><label>Notes</label><input type="text" id="adh-notes"></div>
+      </div>
+      <button type="submit" class="btn">Ajouter l'adhésion</button>
+    </form>
+    <div id="msg-adh" class="msg"></div>
+  </div>
+
+  <!-- CONSULTATION -->
+  <div id="tab-cons" class="tab-content">
+    <h3>Consolidé saison 2026-2027</h3>
+    <button class="btn small" onclick="loadAll()">Actualiser</button>
+    <div id="cons-out"><p class="empty">Cliquez sur « Actualiser ».</p></div>
+  </div>
+</div>
+
+<!-- Script 1 : onglets + capture d'erreurs. Indépendant de Supabase : les onglets marchent même si Supabase plante. -->
+<script>
+  function setStatus(text, type) {
+    var el = document.getElementById('status');
+    el.textContent = text;
+    el.className = 'status ' + type;
+  }
+  window.addEventListener('error', function (e) {
+    setStatus('Erreur JavaScript : ' + e.message, 'err');
+  });
+  function showTab(id) {
+    document.querySelectorAll('.tab-content').forEach(function (el) {
+      el.classList.toggle('active', el.id === 'tab-' + id);
+    });
+    document.querySelectorAll('.tab-btn').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-tab') === id);
+    });
+    if (id === 'cons' && typeof loadAll === 'function') loadAll();
+  }
+</script>
+
+<!-- Bibliothèque Supabase (version 2 figée) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Script 2 : données -->
+<script>
+  var SUPABASE_URL = 'https://vifwgxukckjmnvpvsaab.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_olO4qtgdXaV9XPXECIkcTA_cngX3bN0';
+  var SAISON = '2026-2027';
+  var db = null; // surtout pas "supabase" : ce nom est déjà pris par la bibliothèque
+
+  if (window.supabase && window.supabase.createClient) {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } else {
+    setStatus('La bibliothèque Supabase ne s\'est pas chargée (connexion internet ou bloqueur de publicité ?)', 'err');
+  }
+
+  function val(id) { return document.getElementById(id).value.trim(); }
+  function txt(id) { var v = val(id); return v === '' ? null : v; }
+  function num(id) { var v = parseFloat(val(id).replace(',', '.')); return isNaN(v) ? null : v; }
+
+  function showMsg(id, text, type) {
+    var el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg ' + type;
+    if (type === 'ok') setTimeout(function () { el.className = 'msg'; }, 4000);
+  }
+
+  async function save(table, data, required, formId, msgId) {
+    for (var i = 0; i < required.length; i++) {
+      var k = required[i][0];
+      if (data[k] === null || data[k] === '') { showMsg(msgId, 'Champ obligatoire manquant : ' + required[i][1], 'err'); return; }
+    }
+    if (!db) { showMsg(msgId, 'Pas de connexion à Supabase.', 'err'); return; }
+    var res = await db.from(table).insert([data]);
+    if (res.error) { showMsg(msgId, 'Erreur Supabase : ' + res.error.message, 'err'); return; }
+    showMsg(msgId, 'Enregistré dans Supabase ✓', 'ok');
+    document.getElementById(formId).reset();
+  }
+
+  function saveRec() {
+    save('recettes', {
+      saison: SAISON, date: txt('rec-date'), section: val('rec-section'), payeur: txt('rec-payeur'),
+      montant: num('rec-montant'), source: val('rec-source'), destination: val('rec-destination'),
+      mode: val('rec-mode'), statut: val('rec-statut'), ch_banque: txt('rec-banque'),
+      ch_num: txt('rec-num'), notes: txt('rec-notes')
+    }, [['date', 'Date'], ['payeur', 'Payeur'], ['montant', 'Montant']], 'f-rec', 'msg-rec');
+  }
+
+  function saveDep() {
+    save('depenses', {
+      saison: SAISON, date: txt('dep-date'), section: val('dep-section'), creancier: txt('dep-creancier'),
+      montant: num('dep-montant'), categorie: val('dep-categorie'), payeur: val('dep-payeur'),
+      mode: val('dep-mode'), statut: val('dep-statut'), piece: txt('dep-piece'), notes: txt('dep-notes')
+    }, [['date', 'Date'], ['creancier', 'Créancier'], ['montant', 'Montant']], 'f-dep', 'msg-dep');
+  }
+
+  function saveAdh() {
+    save('adhesions', {
+      saison: SAISON, adherent: txt('adh-nom'), date: txt('adh-date'), section: val('adh-section'), categorie: val('adh-categorie'),
+      licence: val('adh-licence'), montant: num('adh-montant'), mode: val('adh-mode'),
+      statut: val('adh-statut'), maman_de_joueur: document.getElementById('adh-maman').checked,
+      ch_banque: txt('adh-banque'), ch_num: txt('adh-num'), notes: txt('adh-notes')
+    }, [["adherent", "Nom de l'adhérent"], ['date', 'Date'], ['section', 'Section'], ['montant', 'Montant']], 'f-adh', 'msg-adh');
+  }
+
+  // ---------- Consultation ----------
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function eur(n) { return Number(n || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }); }
+  function frDate(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function total(rows) { return rows.reduce(function (s, r) { return s + Number(r.montant || 0); }, 0); }
+
+  function cell(key, v) {
+    if (key === 'montant') return eur(v);
+    if (key === 'date') return frDate(v);
+    if (key === 'maman_de_joueur') return v ? 'Oui' : '';
+    return esc(v == null ? '' : v);
+  }
+  function table(rows, cols) {
+    if (!rows.length) return '<p class="empty">Aucune donnée.</p>';
+    var h = '<div class="scroll"><table><tr>';
+    cols.forEach(function (c) { h += '<th>' + c[1] + '</th>'; });
+    h += '</tr>';
+    rows.forEach(function (r) {
+      h += '<tr>';
+      cols.forEach(function (c) { h += '<td>' + cell(c[0], r[c[0]]) + '</td>'; });
+      h += '</tr>';
+    });
+    return h + '</table></div>';
+  }
+
+  async function loadAll() {
+    var out = document.getElementById('cons-out');
+    if (!db) { out.innerHTML = '<p class="empty">Pas de connexion à Supabase.</p>'; return; }
+    out.innerHTML = '<p class="empty">Chargement…</p>';
+    var res = await Promise.all(['recettes', 'depenses', 'adhesions'].map(function (t) {
+      return db.from(t).select('*').eq('saison', SAISON).order('date', { ascending: false });
+    }));
+    for (var i = 0; i < res.length; i++) {
+      if (res[i].error) { out.innerHTML = '<div class="msg err">Erreur Supabase : ' + esc(res[i].error.message) + '</div>'; return; }
+    }
+    var rec = res[0].data || [], dep = res[1].data || [], adh = res[2].data || [];
+    var tRec = total(rec), tDep = total(dep), tAdh = total(adh), solde = tRec + tAdh - tDep;
+    var aEnc = total(rec.filter(function (r) { return r.statut === 'À encaisser'; }))
+             + total(adh.filter(function (r) { return r.statut === 'À encaisser'; }));
+
+    var h = '<div class="cards">'
+      + '<div class="card"><div class="t">Recettes</div><div class="v">' + eur(tRec) + '</div></div>'
+      + '<div class="card"><div class="t">Adhésions</div><div class="v">' + eur(tAdh) + '</div></div>'
+      + '<div class="card"><div class="t">Dépenses</div><div class="v">' + eur(tDep) + '</div></div>'
+      + '<div class="card"><div class="t">Solde</div><div class="v ' + (solde >= 0 ? 'pos' : 'neg') + '">' + eur(solde) + '</div></div>'
+      + '</div><p style="margin-bottom:10px">Chèques / sommes à encaisser : <b>' + eur(aEnc) + '</b></p>';
+
+    var sections = ['Betton', 'Saint-Grégoire', 'Montgermont', 'Club (général)'];
+    h += '<h4>Par section</h4><div class="scroll"><table><tr><th>Section</th><th>Recettes</th><th>Adhésions</th><th>Dépenses</th><th>Solde</th></tr>';
+    sections.forEach(function (s) {
+      var f = function (r) { return (r.section || 'Club (général)') === s; };
+      var a = total(rec.filter(f)), b = total(adh.filter(f)), c = total(dep.filter(f));
+      h += '<tr><td>' + s + '</td><td>' + eur(a) + '</td><td>' + eur(b) + '</td><td>' + eur(c) + '</td><td>' + eur(a + b - c) + '</td></tr>';
+    });
+    h += '</table></div>';
+
+    h += '<h4>Recettes (' + rec.length + ')</h4>' + table(rec, [['date', 'Date'], ['section', 'Section'], ['payeur', 'Payeur'], ['source', 'Source'], ['destination', 'Destination'], ['montant', 'Montant'], ['mode', 'Mode'], ['statut', 'Statut'], ['ch_num', 'N° chèque'], ['notes', 'Notes']]);
+    h += '<h4>Dépenses (' + dep.length + ')</h4>' + table(dep, [['date', 'Date'], ['section', 'Section'], ['creancier', 'Créancier'], ['categorie', 'Catégorie'], ['payeur', 'Payé par'], ['montant', 'Montant'], ['mode', 'Mode'], ['statut', 'Statut'], ['piece', 'Pièce'], ['notes', 'Notes']]);
+    h += '<h4>Adhésions (' + adh.length + ')</h4>' + table(adh, [['adherent', 'Adhérent'], ['date', 'Date'], ['section', 'Section'], ['categorie', 'Catégorie'], ['licence', 'Licence'], ['montant', 'Montant'], ['mode', 'Mode'], ['statut', 'Statut'], ['ch_banque', 'Banque'], ['ch_num', 'N° chèque'], ['maman_de_joueur', 'Maman'], ['notes', 'Notes']]);
+    out.innerHTML = h;
+  }
+
+  // ---------- Test de connexion au chargement ----------
+  (async function () {
+    if (!db) return;
+    var r = await db.from('adhesions').select('id', { count: 'exact', head: true });
+    if (r.error) setStatus('Connexion Supabase : ERREUR — ' + r.error.message, 'err');
+    else setStatus('Connexion Supabase : OK', 'ok');
+  })();
+</script>
+</body>
+</html>
